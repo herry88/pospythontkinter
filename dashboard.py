@@ -235,7 +235,7 @@ class DashboardApp:
             total_kategori = cursor.fetchone()[0]
 
             # Hitung transaksi hari ini
-            cursor.execute("SELECT COUNT(*), COALESCE(SUM(total_price), 0) FROM transactions WHERE DATE(created_at) = CURDATE()")
+            cursor.execute("SELECT COUNT(*), COALESCE(SUM(total), 0) FROM transactions WHERE DATE(tanggal) = CURDATE()")
             trx_res = cursor.fetchone()
             total_trx = trx_res[0] if trx_res else 0
             total_pendapatan = trx_res[1] if trx_res else 0
@@ -257,10 +257,12 @@ class DashboardApp:
         messagebox.showinfo("Fitur", "Halaman Transaksi Kasir siap dikembangkan.")
 
     def show_produk_view(self):
-        messagebox.showinfo("Fitur", "Halaman Data Produk siap dikembangkan.")
+        from produk import ProdukView
+        ProdukView(self.content_frame)
 
     def show_kategori_view(self):
-        messagebox.showinfo("Fitur", "Halaman Kategori Barang siap dikembangkan.")
+        from kategori import KategoriView
+        KategoriView(self.content_frame)
 
     def show_laporan_view(self):
         messagebox.showinfo("Fitur", "Halaman Laporan Penjualan siap dikembangkan.")
