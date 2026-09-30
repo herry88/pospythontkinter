@@ -13,11 +13,11 @@ class DashboardApp:
         self.user_data = user_data or {"nama": "User", "role": "kasir", "username": "user"}
 
         self.root.title(f"Dashboard POS - {self.user_data['nama']}")
-        self.root.geometry("1100x680")
-        self.root.minsize(900, 600)
+        self.root.geometry("1200x720")
+        self.root.minsize(1000, 650)
         self.root.configure(bg="#F3F4F6")
 
-        self.center_window(1100, 680)
+        self.center_window(1200, 720)
 
         # Build UI Components
         self.create_header()
@@ -129,7 +129,7 @@ class DashboardApp:
             btn.pack(fill="x")
 
         # Main Content Area Right
-        self.content_frame = tk.Frame(body_frame, bg="#F8FAFC", padx=30, pady=25)
+        self.content_frame = tk.Frame(body_frame, bg="#F8FAFC", padx=20, pady=18)
         self.content_frame.pack(side="right", fill="both", expand=True)
 
     def show_dashboard_view(self):
@@ -238,7 +238,17 @@ class DashboardApp:
             cursor.execute("SELECT COUNT(*), COALESCE(SUM(total), 0) FROM transactions WHERE DATE(tanggal) = CURDATE()")
             trx_res = cursor.fetchone()
             total_trx = trx_res[0] if trx_res else 0
-            total_pendapatan = trx_res[1] if trx_res else 0
+            total_pendapatan = float(trx_res[1]) if (trx_res and trx_res[1]) else 0.0
+
+            # Ambil 10 Transaksi Terbaru
+            cursor.execute("""
+                SELECT t.id, t.nomor_transaksi, DATE_FORMAT(t.tanggal, '%Y-%m-%d %H:%i') as tgl, 
+                       u.nama as kasir, t.total 
+                FROM transactions t
+                JOIN users u ON t.user_id = u.id
+                ORDER BY t.id DESC LIMIT 10
+            """)
+            recent_trxs = cursor.fetchall()
 
             cursor.close()
             db.close()
@@ -250,11 +260,25 @@ class DashboardApp:
                 self.card_transaksi_val.config(text=str(total_trx))
                 self.card_pendapatan_val.config(text=f"Rp {total_pendapatan:,.0f}".replace(",", "."))
 
+            # Populate Treeview Transaksi Terbaru
+            if hasattr(self, "tree"):
+                for row in self.tree.get_children():
+                    self.tree.delete(row)
+                for item in recent_trxs:
+                    self.tree.insert("", "end", values=(
+                        item[0],
+                        item[1],
+                        item[2],
+                        item[3],
+                        f"Rp {float(item[4]):,.0f}".replace(",", ".")
+                    ))
+
         except Exception as e:
             print("Error loading dashboard data:", e)
 
     def show_transaksi_view(self):
-        messagebox.showinfo("Fitur", "Halaman Transaksi Kasir siap dikembangkan.")
+        from transaksi import TransaksiView
+        TransaksiView(self.content_frame, self.user_data)
 
     def show_produk_view(self):
         from produk import ProdukView
@@ -265,10 +289,12 @@ class DashboardApp:
         KategoriView(self.content_frame)
 
     def show_laporan_view(self):
-        messagebox.showinfo("Fitur", "Halaman Laporan Penjualan siap dikembangkan.")
+        from laporan import LaporanView
+        LaporanView(self.content_frame, self.user_data)
 
     def show_user_view(self):
-        messagebox.showinfo("Fitur", "Halaman Kelola User siap dikembangkan.")
+        from user import UserView
+        UserView(self.content_frame, self.user_data)
 
     def logout(self):
         if messagebox.askyesno("Konfirmasi Logout", "Apakah Anda yakin ingin keluar dari aplikasi?"):
